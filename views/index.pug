@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  div
+    form(method='get', action='/')
+      input(type='text', name='path', placeholder='Path' value=path)
+      input(type='submit', value='Go')
+  ul
+    li
+      a(href='/?path=' + encodeURIComponent(path + '/..')) ..
+    each item in items
+      li
+        if item.type === 'dir'
+          a(href='/?path=' + encodeURIComponent(path + '/' + item.item))= item.item
+        else
+          label
+            input(type='checkbox', name='file[]', value=item.item)
+            span= item.item
