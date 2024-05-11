@@ -7,8 +7,11 @@ function mergeVideos(inputFiles, outputFile) {
     if(!fs.existsSync(outputFolder)) {
         fs.mkdirSync(outputFolder, { recursive: true })
     }
+    const filesListContent = inputFiles.map(f => `file '${f}'`).join('\n')
+    const filesListPath = path.join(outputFolder, 'mergerr-files.txt')
+    fs.writeFileSync(filesListPath, filesListContent)
     return new Promise((resolve, reject) => {
-        const ffmpegCommand = `ffmpeg -f concat -safe 0 -i ${inputFiles.map(f => `"${f}"`).join(' ')} -c copy "${outputFile}"`;
+        const ffmpegCommand = `ffmpeg -f concat -safe 0 -i "${filesListPath}" -c copy "${outputFile}"`;
         console.log(ffmpegCommand)
         const ffmpegProcess = spawn(ffmpegCommand, { shell: true });
 
@@ -21,6 +24,7 @@ function mergeVideos(inputFiles, outputFile) {
         });
 
         ffmpegProcess.on('exit', (code) => {
+            fs.rmSync(filesListPath)
             if (code === 0) {
                 resolve(outputFile); // Success callback
             } else {
