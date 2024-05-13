@@ -10,7 +10,7 @@ jobs:
   packageChange:
     runs-on: ubuntu-latest
     outputs:
-      package: ${{ steps.packageChange.outputs.package }}
+      package: ${{ steps.changes.outputs.package }}
     steps:
     - uses: actions/checkout@v4
     - uses: dorny/paths-filter@v3
