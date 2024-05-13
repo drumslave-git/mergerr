@@ -7,10 +7,26 @@ on:
     branches: [ "main" ]
 
 jobs:
+  packageChange:
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.packageChange.outputs.package }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          package:
+            - './package.json'
+            
   docker:
     runs-on: ubuntu-latest
+    needs: packageChange
+    if: ${{ needs.packageChange.outputs.package == 'true' }}
     steps:
-      - name: Checkout Repository
+      -
+        name: Checkout Repository
         uses: actions/checkout@v4
       -
         name: get-npm-version
