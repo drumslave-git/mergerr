@@ -58,6 +58,7 @@ const DataProvider = ({children}) => {
         }).then(res => res.json())
             .then(data => {
                 setConfigs(data)
+                alert('Config saved for: ' + appType)
             })
     }, [appType, appUrl, apiKey])
 
