@@ -33,6 +33,5 @@ jobs:
           context: .
           push: true
           tags: |
-            gtislenko/mergerr:${{ steps.package-version.outputs.current-version}}
-            gtislenko/mergerr:latest
-      
+            ${{ secrets.DOCKERHUB_USERNAME }}/mergerr:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/mergerr:${{ steps.package-version.outputs.current-version}}
