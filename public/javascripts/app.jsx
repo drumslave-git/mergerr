@@ -1,3 +1,10 @@
+const APPS_TYPES = [
+    'radarr',
+    'sonarr',
+    'whisparr',
+    'whisparr-v1',
+]
+
 const DataContext = React.createContext({});
 
 const usePersistedState = (key, defaultValue) => {
@@ -19,14 +26,48 @@ const usePersistedState = (key, defaultValue) => {
 const DataProvider = ({children}) => {
     const [files, setFiles] = React.useState([])
     const [targetMovie, setTargetMovie] = React.useState(null)
-    const [appUrl, setAppUrl] = usePersistedState('appUrl', '')
-    const [apiKey, setApiKey] = usePersistedState('apiKey', '')
+    const [configs, setConfigs] = React.useState({});
+    const [appType, setAppType] = usePersistedState('appType', APPS_TYPES[0]);
+    const [appUrl, setAppUrl] = React.useState('')
+    const [apiKey, setApiKey] = React.useState('')
+
+    React.useEffect(() => {
+        fetch('/config')
+            .then(res => res.json())
+            .then(data => {
+                setConfigs(data)
+            })
+    }, [])
+
+    React.useEffect(() => {
+        setAppUrl(configs[appType]?.appUrl || '')
+        setApiKey(configs[appType]?.apiKey || '')
+    }, [configs, appType])
+
+    const saveConfig = React.useCallback(() => {
+        fetch('/config', {
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                appType,
+                appUrl,
+                apiKey
+            })
+        }).then(res => res.json())
+            .then(data => {
+                setConfigs(data)
+            })
+    }, [appType, appUrl, apiKey])
 
     return <DataContext.Provider value={{
         files, setFiles,
         appUrl, setAppUrl,
         apiKey, setApiKey,
-        targetMovie, setTargetMovie
+        targetMovie, setTargetMovie,
+        configs, saveConfig,
+        appType, setAppType
     }}>
         {children}
     </DataContext.Provider>
@@ -117,22 +158,19 @@ const Dialog = ({open, children, onClose, onAction}) => {
 }
 
 const MergeDialog = ({open = false, onClose}) => {
-    const {files, setFiles, apiKey, appUrl, targetMovie, setTargetMovie} = React.useContext(DataContext);
+    const {files, setFiles, targetMovie, setTargetMovie, appType} = React.useContext(DataContext);
     const [movies, setMovies] = React.useState([])
     const [filteredMovies, setFilteredMovies] = React.useState([])
     const [filter, setFilter] = React.useState('')
 
     React.useEffect(() => {
         if (open) {
-            fetch('/movies', {
+            fetch('/media', {
                 method: 'post',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    apiKey,
-                    appUrl
-                })
+                body: JSON.stringify({appType})
             }).then(res => res.json())
                 .then((data = []) => setMovies((data || []).sort((movieA, movieB) => {
                     if (movieA.title.toLowerCase() < movieB.title.toLowerCase()) {
@@ -143,8 +181,10 @@ const MergeDialog = ({open = false, onClose}) => {
                     }
                     return 0;
                 })))
+        } else {
+            setMovies([])
         }
-    }, [open])
+    }, [open, appType])
 
     React.useEffect(() => {
         setFilteredMovies(movies.filter(movie => movie.title.toLowerCase().includes(filter.toLowerCase())))
@@ -219,7 +259,7 @@ const MergeDialog = ({open = false, onClose}) => {
 const Main = () => {
     const [path, setPath] = React.useState('');
     const [mergeDialogOpened, setMergeDialogOpened] = React.useState(false)
-    const {setFiles, files, apiKey, setApiKey, appUrl, setAppUrl} = React.useContext(DataContext);
+    const {setFiles, files, apiKey, setApiKey, appUrl, setAppUrl, configs, saveConfig, appType, setAppType} = React.useContext(DataContext);
 
     React.useEffect(() => {
         const search = new URLSearchParams(window.location.search);
@@ -230,6 +270,12 @@ const Main = () => {
         <>
             <div>
                 <label>
+                    App Type:
+                    <select name="appType" onChange={e => setAppType(e.target.value)} value={appType}>
+                        {APPS_TYPES.map(app => <option key={app} value={app}>{app}</option>)}
+                    </select>
+                </label>
+                <label>
                     App URL:
                     <input type="url" name="appUrl" onChange={e => setAppUrl(e.target.value)} value={appUrl} />
                 </label>
@@ -237,6 +283,7 @@ const Main = () => {
                     API Key:
                     <input type="text" name="apiKey" onChange={e => setApiKey(e.target.value)} value={apiKey}/>
                 </label>
+                <button onClick={() => saveConfig()}>Save</button>
             </div>
             <hr/>
             <form>

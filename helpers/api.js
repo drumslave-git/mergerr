@@ -1,8 +1,7 @@
 const axios = require('axios');
 
-async function getMovies(appUrl, apiKey) {
-    const url = `${appUrl}/api/v3/movie?apiKey=${apiKey}`;
-    // console.log(`Fetching movies from ${url}`)
+async function getAll(url) {
+    console.log(`Fetching from ${url}`)
     try {
         const response = await axios.get(url);
 
@@ -13,4 +12,13 @@ async function getMovies(appUrl, apiKey) {
     }
 }
 
-module.exports = { getMovies };
+async function getMovies(appUrl, apiKey) {
+    return getAll(`${appUrl}/api/v3/movie?apiKey=${apiKey}`);
+}
+
+async function getEpisodes(appUrl, apiKey) {
+    // console.log(`Fetching movies from ${url}`)
+    return getAll(`${appUrl}/api/v3/episode?apiKey=${apiKey}`);
+}
+
+module.exports = { getMovies, getEpisodes };
