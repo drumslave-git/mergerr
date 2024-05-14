@@ -44,8 +44,12 @@ const DataProvider = ({children}) => {
     React.useEffect(() => {
         fetch('/queue?appType=' + appType)
             .then(res => res.json())
-            .then(({data}) => {
-                setQueue(data)
+            .then((json) => {
+                if(json.error) {
+                    alert(json.error)
+                    return
+                }
+                setQueue(json.data)
             })
     }, [appType])
 

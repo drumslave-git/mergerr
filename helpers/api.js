@@ -45,7 +45,11 @@ class API {
     }
 
     async getQueue(appType, result = []) {
-        const {data} = await this.get(appType, '/api/v3/queue?pageSize=100&includeUnknownMovieItems=true&includeMovie=true');
+        const resp = await this.get(appType, '/api/v3/queue?pageSize=100&includeUnknownMovieItems=true&includeMovie=true');
+        if(resp.error) {
+            return resp;
+        }
+        const data = resp.data;
         const records = data.records
             .filter(item => item.trackedDownloadState === 'importPending')
         await Promise.all(records.map(async item => {
