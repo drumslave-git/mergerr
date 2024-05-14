@@ -24,7 +24,7 @@ class API {
         if(!appUrl || !apiKey) {
             return {error: 'Missing configuration for ' + appType + '. Please configure it in the settings page.'}
         }
-        const url = new URL(appUrl + uri);
+        const url = new URL(appUrl.replace(/\/$/, '') + uri);
         url.searchParams.append('apikey', apiKey);
         console.log(`Fetching from ${url.href}`)
         try {
