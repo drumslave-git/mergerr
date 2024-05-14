@@ -14,6 +14,7 @@ function mergeVideos(inputFiles, outputFile) {
         const ffmpegCommand = `ffmpeg -f concat -safe 0 -i "${filesListPath}" -c copy "${outputFile}"`;
         console.log(ffmpegCommand)
         const ffmpegProcess = spawn(ffmpegCommand, { shell: true });
+        let logs = '';
 
         ffmpegProcess.stdout.on('data', (data) => {
             console.log(data.toString()); // Progress logging (optional)
@@ -21,6 +22,7 @@ function mergeVideos(inputFiles, outputFile) {
 
         ffmpegProcess.stderr.on('data', (data) => {
             console.error(data.toString()); // Error logging
+            logs += data.toString();
         });
 
         ffmpegProcess.on('exit', (code) => {
@@ -28,7 +30,7 @@ function mergeVideos(inputFiles, outputFile) {
             if (code === 0) {
                 resolve(outputFile); // Success callback
             } else {
-                reject(new Error(`FFmpeg exited with code ${code}`)); // Error callback
+                reject(new Error(`FFmpeg exited with code ${code}: \n` + logs)); // Error callback
             }
         });
     });
