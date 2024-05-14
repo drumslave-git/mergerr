@@ -65,7 +65,9 @@ const DataProvider = ({children}) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                appType
+                appType,
+                appUrl,
+                apiKey
             })
         }).then(res => res.json())
             .then(data => {
