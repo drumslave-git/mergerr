@@ -20,8 +20,10 @@ class API {
     }
 
     async get(appType, uri) {
-
-        const {appUrl, apiKey} = this.config[appType];
+        const {appUrl, apiKey} = this.config[appType] || {}
+        if(!appUrl || !apiKey) {
+            return {error: 'Missing configuration for ' + appType + '. Please configure it in the settings page.'}
+        }
         const url = new URL(appUrl + uri);
         url.searchParams.append('apikey', apiKey);
         console.log(`Fetching from ${url.href}`)
