@@ -118,11 +118,17 @@ const getItemMergeInfo = (queue, target) => {
 }
 
 const Dialog = ({children, onClose, onAction}) => {
-    return <dialog open>
+    const ref = React.useRef()
+
+    React.useEffect(() => {
+        ref.current.showModal()
+    }, [])
+
+    return <dialog ref={ref}>
         {children}
         <menu>
-            <button onClick={onClose}>Close</button>
-            <button onClick={onAction}>OK</button>
+            {onClose && <button onClick={onClose}>Close</button>}
+            {onAction && <button onClick={onAction}>OK</button>}
         </menu>
     </dialog>
 }
@@ -193,14 +199,15 @@ const MergeInfo = () => {
         ))}
         {!movie && (
             <>
-                <input type="text" value={filter} onChange={e => setFilter(e.target.value)} />
-                <hr />
-                <MoviesList onClick={onSelectedMovie} filter={filter} />
+                <input type="text" value={filter} onChange={e => setFilter(e.target.value)}/>
+                <hr/>
+                <MoviesList onClick={onSelectedMovie} filter={filter}/>
             </>
         )}
         {movie && (
             <div>
-                <strong>Target:</strong> {movie.path} - {movie.cleanTitle} <button onClick={onDropMovie}>Drop</button>
+                <strong>Target:</strong> {movie.path} - {movie.cleanTitle}
+                <button onClick={onDropMovie}>Drop</button>
             </div>
         )}
     </div>
