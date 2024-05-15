@@ -7,7 +7,7 @@ function mergeVideos(inputFiles, outputFile) {
     if(!fs.existsSync(outputFolder)) {
         fs.mkdirSync(outputFolder, { recursive: true })
     }
-    const filesListContent = inputFiles.map(f => `file '${f}'`).join('\n')
+    const filesListContent = inputFiles.map(f => `file '${f.replace(/#/g, '\\#')}'`).join('\n')
     const filesListPath = path.join(outputFolder, 'mergerr-files.txt')
     fs.writeFileSync(filesListPath, filesListContent)
     return new Promise((resolve, reject) => {
