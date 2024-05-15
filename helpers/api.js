@@ -19,6 +19,14 @@ class API {
         this.config = readConfig();
     }
 
+    updateConfig() {
+        this.config = readConfig();
+    }
+
+    sendEvent(data) {
+
+    }
+
     async get(appType, uri) {
         const {appUrl, apiKey} = this.config[appType] || {}
         if(!appUrl || !apiKey) {

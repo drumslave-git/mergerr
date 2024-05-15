@@ -58,11 +58,20 @@ const Dialog = ({title, children, onClose, onAction}) => {
         ref.current.addEventListener('hidden.bs.modal', () => {
             onClose && onClose()
         }, {once: true})
+
+        return () => {
+            modal.hide()
+        }
     }, [])
+
+    const closable = React.useMemo(() => {
+        return !!onClose
+    }, [onClose])
 
     return (
         <div
             className="modal modal-xl fade"
+            data-bs-backdrop={!closable ? 'static' : true} data-bs-keyboard={closable}
             ref={ref}
         >
             <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -92,7 +101,7 @@ const MoviesList = ({filter = '', onClick}) => {
 
     React.useEffect(() => {
         setMovies(null)
-        fetch(`/movie?appType=${appType}`).then(res => res.json())
+        api.get(`/movie?appType=${appType}`)
             .then((json = []) => setMovies((json.data || []).sort((movieA, movieB) => {
                 if (movieA.title.toLowerCase() < movieB.title.toLowerCase()) {
                     return -1;

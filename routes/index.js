@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const {API, readConfig, CONFIG_FILE_PATH} = require("../helpers/api");
 const {mergeVideos} = require("../helpers/ffmpeg");
 
-let api = new API();
+const api = new API();
 
 /* GET home page. */
 router.get('/', async function(req, res, next) {
@@ -34,7 +34,7 @@ router.post('/merge', async function(req, res, next) {
   const target = path.join(targetFolder, title) + '.' + path.basename(sources[0]).split('.').pop();
   let result
   try {
-    result = await mergeVideos(sources, target);
+    result = await mergeVideos(sources, target, api.sendEvent);
   } catch (e) {
     result = e.message;
   }
@@ -50,8 +50,25 @@ router.post('/config', async function(req, res, next) {
   const {appType, ...rest} = req.body;
   config = {...config, [appType]: rest};
   fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2));
-  api = new API();
+  api.updateConfig();
   res.json(config);
 })
+
+router.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders(); // flush the headers to establish SSE with client
+
+  api.sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // When the client closes connection, stop sending events
+  req.on('close', () => {
+    api.sendEvent = () => {};
+    res.end();
+  });
+});
 
 module.exports = router;

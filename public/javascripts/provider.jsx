@@ -1,8 +1,7 @@
 const DataContext = React.createContext({});
 
 const fetchQueue = async (appType) => {
-    const res = await fetch('/queue?appType=' + appType)
-    return await res.json()
+    return await api.get('/queue?appType=' + appType)
 }
 
 const DataProvider = ({children}) => {
@@ -14,12 +13,13 @@ const DataProvider = ({children}) => {
     const [apiKey, setApiKey] = React.useState('')
     const [queue, setQueue] = React.useState([])
     const [toasts, setToasts] = React.useState([])
+    const [ffmpegLogs, setFfmpegLogs] = React.useState('')
+    const [ffmpegStatus, setFfmpegStatus] = React.useState('idle')
     const mergeInfo = getItemMergeInfo(queue, target)
 
     React.useEffect(() => {
         setQueue(null)
-        fetch('/config')
-            .then(res => res.json())
+        api.get('/config')
             .then(data => {
                 setConfigs(data)
                 fetchQueue(appType).then((json) => {
@@ -31,7 +31,24 @@ const DataProvider = ({children}) => {
                     setQueue(json.data)
                 })
             })
-    }, [appType])
+
+        const eventSource = new EventSource('/events');
+
+        eventSource.onmessage = ({data: message}) => {
+            const json = JSON.parse(message);
+            if(json.type === 'ffmpeg-exit') {
+                setFfmpegStatus('idle')
+                setFfmpegLogs(logs => logs + '\n' + 'Process exit with code:' + json.data + '\n');
+            } else {
+                setFfmpegStatus('running')
+                setFfmpegLogs(logs => logs + json.data + '\n');
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            setFfmpegLogs(logs => logs + error.message + '\n');
+        };
+    }, [])
 
     React.useEffect(() => {
         setQueue(null)
@@ -43,25 +60,16 @@ const DataProvider = ({children}) => {
                 }
                 setQueue(json.data)
             })
-    }, [appType])
-
-    React.useEffect(() => {
         setAppUrl(configs[appType]?.appUrl || '')
         setApiKey(configs[appType]?.apiKey || '')
-    }, [configs, appType])
+    }, [appType, configs])
 
     const saveConfig = React.useCallback(() => {
-        fetch('/config', {
-            method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                appType,
-                appUrl,
-                apiKey
-            })
-        }).then(res => res.json())
+        api.post('/config', {
+            appType,
+            appUrl,
+            apiKey
+        })
             .then(data => {
                 setConfigs(data)
                 alert('Config saved for: ' + appType)
@@ -69,19 +77,14 @@ const DataProvider = ({children}) => {
     }, [appType, appUrl, apiKey])
 
     const mergeVideos = React.useCallback(() => {
-        fetch('/merge', {
-            method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                sources: mergeInfo.sources,
-                targetFolder: mergeInfo.movie.path,
-                title: mergeInfo.movie.cleanTitle
-            })
-        }).then(res => res.json())
+        api.post('/merge', {
+            sources: mergeInfo.sources,
+            targetFolder: mergeInfo.movie.path,
+            title: mergeInfo.movie.cleanTitle
+        })
             .then(data => {
-                alert('Merge result: ' + data.result)
+                setFfmpegLogs(logs => logs + data.result + '\n');
+                setTarget(null)
             })
     }, [mergeInfo])
 
@@ -94,7 +97,9 @@ const DataProvider = ({children}) => {
         queue, setQueue,
         sources, setSources,
         mergeVideos,
-        toasts, addToast: (toast) => setToasts(items => [...items, toast]), removeToast: (toast) => setToasts(items => items.filter(t => t !== toast))
+        toasts, addToast: (toast) => setToasts(items => [...items, toast]), removeToast: (toast) => setToasts(items => items.filter(t => t !== toast)),
+        ffmpegLogs, setFfmpegLogs,
+        ffmpegStatus
     }}>
         {children}
     </DataContext.Provider>

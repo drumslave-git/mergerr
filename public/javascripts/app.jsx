@@ -1,5 +1,5 @@
 const Main = () => {
-    const {apiKey, setApiKey, appUrl, setAppUrl, saveConfig, appType, setAppType, queue, target, setTarget, mergeVideos, toasts} = React.useContext(DataContext);
+    const {apiKey, setApiKey, appUrl, setAppUrl, saveConfig, appType, setAppType, queue, target, setTarget, mergeVideos, toasts, ffmpegLogs, setFfmpegLogs, ffmpegStatus} = React.useContext(DataContext);
 
     const onMerge = React.useCallback((e) => {
         e.preventDefault()
@@ -67,11 +67,14 @@ const Main = () => {
                         </li>
                     ))}
                 </ul>
-                {target && <Dialog title={`Merge: ${mergeTarget.title}`} onClose={() => setTarget(null)}
-                                   onAction={mergeVideos}>
-                    <MergeInfo/>
-                </Dialog>}
             </div>
+            {target && <Dialog title={`Merge: ${mergeTarget.title}`} onClose={() => setTarget(null)}
+                               onAction={mergeVideos}>
+                <MergeInfo/>
+            </Dialog>}
+            {ffmpegLogs && <Dialog title={`Merge is running`} onClose={ffmpegStatus === 'idle' ? () => setFfmpegLogs('') : undefined} >
+               <pre>{ffmpegLogs}</pre>
+            </Dialog>}
             <div className="toast-container position-fixed bottom-0 end-0 p-3">
                 {toasts.map(toast => (
                     <div key={toast.message} className={`toast show align-items-center text-bg-${toast.type} border-0`} role="alert" aria-live="assertive" aria-atomic="true">
