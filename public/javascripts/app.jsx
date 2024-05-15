@@ -84,8 +84,8 @@ const DataProvider = ({children}) => {
             },
             body: JSON.stringify({
                 sources: mergeInfo.sources,
-                targetFolder: mergeInfo.folder,
-                title: mergeInfo.title
+                targetFolder: mergeInfo.movie.path,
+                title: mergeInfo.movie.cleanTitle
             })
         }).then(res => res.json())
             .then(data => {
@@ -99,7 +99,7 @@ const DataProvider = ({children}) => {
         target, setTarget,
         configs, saveConfig,
         appType, setAppType,
-        queue,
+        queue, setQueue,
         sources, setSources,
         mergeVideos
     }}>
@@ -114,7 +114,7 @@ const getItemMergeInfo = (queue, target) => {
 
     const movie = targetItem.manualImport[0].movie
 
-    return {sources: targetItem.manualImport.map(item => item.path), folder: movie.path, title: movie.cleanTitle}
+    return {sources: targetItem.manualImport.map(item => item.path), movie}
 }
 
 const Dialog = ({children, onClose, onAction}) => {
@@ -127,14 +127,14 @@ const Dialog = ({children, onClose, onAction}) => {
     </dialog>
 }
 
-const MoviesList = ({filter = ''}) => {
-    const {appType, setTargetMovie} = React.useContext(DataContext);
+const MoviesList = ({filter = '', onClick}) => {
+    const {appType} = React.useContext(DataContext);
 
     const [movies, setMovies] = React.useState([])
     const [filteredMovies, setFilteredMovies] = React.useState([])
 
     React.useEffect(() => {
-        fetch(`/media?appType=${appType}`).then(res => res.json())
+        fetch(`/movie?appType=${appType}`).then(res => res.json())
             .then((json = []) => setMovies((json.data || []).sort((movieA, movieB) => {
                 if (movieA.title.toLowerCase() < movieB.title.toLowerCase()) {
                     return -1;
@@ -154,7 +154,7 @@ const MoviesList = ({filter = ''}) => {
         <div style={{height: '30vh', overflow: 'auto'}}>
             {filteredMovies.map(movie => (
                 <div key={movie.id}
-                     onClick={() => setTargetMovie(movie)}
+                     onClick={() => onClick(movie)}
                 >{movie.title} ({movie.year})</div>
             ))}
         </div>
@@ -162,8 +162,28 @@ const MoviesList = ({filter = ''}) => {
 }
 
 const MergeInfo = () => {
-    const {queue, target} = React.useContext(DataContext);
-    const {sources, folder, title} = getItemMergeInfo(queue, target)
+    const {queue, target, setQueue} = React.useContext(DataContext);
+    const {sources, movie} = getItemMergeInfo(queue, target)
+
+    const [filter, setFilter] = React.useState('')
+
+    const onSelectedMovie = React.useCallback((movie) => {
+        setQueue(q => q.map(item => item.downloadId === target ? {
+            ...item, manualImport: item.manualImport.map((manual) => ({
+                ...manual,
+                movie
+            }))
+        } : item))
+    }, [target])
+
+    const onDropMovie = React.useCallback(() => {
+        setQueue(q => q.map(item => item.downloadId === target ? {
+            ...item, manualImport: item.manualImport.map((manual) => ({
+                ...manual,
+                movie: undefined
+            }))
+        } : item))
+    }, [target])
 
     return <div>
         {sources.map(source => (
@@ -171,9 +191,18 @@ const MergeInfo = () => {
                 {source}
             </div>
         ))}
-        <div>
-            <strong>Target:</strong> {folder} - {title}
-        </div>
+        {!movie && (
+            <>
+                <input type="text" value={filter} onChange={e => setFilter(e.target.value)} />
+                <hr />
+                <MoviesList onClick={onSelectedMovie} filter={filter} />
+            </>
+        )}
+        {movie && (
+            <div>
+                <strong>Target:</strong> {movie.path} - {movie.cleanTitle} <button onClick={onDropMovie}>Drop</button>
+            </div>
+        )}
     </div>
 }
 

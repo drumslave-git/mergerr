@@ -17,9 +17,9 @@ router.get('/', async function(req, res, next) {
 });
 
 
-router.get('/media', async function(req, res, next) {
+router.get('/movie', async function(req, res, next) {
   const appType = req.query.appType;
-  const media = ['sonarr', 'whisparr'].includes(appType) ? await api.getEpisodes(appType) : await api.getMovies(appType);
+  const media = await api.getMovies(appType);
   res.json(media);
 })
 
